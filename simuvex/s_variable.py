@@ -5,13 +5,17 @@ class SimVariable(object):
     def __init__(self):
         pass
 
+    def pp(self, arch):  # pylint:disable=unused-argument
+        return repr(self)
+
+
 class SimConstantVariable(SimVariable):
     def __init__(self, value=None):
         super(SimConstantVariable, self).__init__()
         self.value = value
 
     def __repr__(self):
-        s = "<const %s>" % self.value
+        s = "<const %#x>" % self.value
 
         return s
 
@@ -50,6 +54,7 @@ class SimTemporaryVariable(SimVariable):
         else:
             return False
 
+
 class SimRegisterVariable(SimVariable):
     def __init__(self, reg_offset, size):
         SimVariable.__init__(self)
@@ -57,8 +62,15 @@ class SimRegisterVariable(SimVariable):
         self.reg = reg_offset
         self.size = size
 
+    def pp(self, arch):
+        if self.reg in arch.register_names:
+            s = "<Reg %s[%d]>" % (arch.register_names[self.reg], self.size)
+            return s
+        else:
+            return repr(self)
+
     def __repr__(self):
-        s = "<Reg %s %d>" % (self.reg, self.size)
+        s = "<Reg %s[%d]>" % (self.reg, self.size)
 
         return s
 
@@ -71,6 +83,7 @@ class SimRegisterVariable(SimVariable):
 
         else:
             return False
+
 
 class SimMemoryVariable(SimVariable):
     def __init__(self, addr, size):
