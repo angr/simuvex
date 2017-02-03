@@ -218,6 +218,8 @@ class SimActionData(SimAction):
         self.actual_value = None
         self.added_constraints = None
 
+        self.subactions = []
+
     def downsize(self):
         self.actual_addrs = None
         self.actual_value = None
@@ -247,5 +249,6 @@ class SimActionData(SimAction):
         c.condition = self._copy_object(self.condition)
         c.fallback = self._copy_object(self.fallback)
         c.fd = self._copy_object(self.fd)
+        c.subactions = [ o.copy() for o in self.subactions ]
 
 from .s_action_object import SimActionObject
