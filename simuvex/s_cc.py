@@ -38,6 +38,9 @@ class SimFunctionArgument(object):
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        return hash(('function_argument', self.size))
+
     def check_value(self, value):
         if not isinstance(value, claripy.ast.Base) and self.size is None:
             raise TypeError("Only claripy objects may be stored through SimFunctionArgument when size is not provided")
@@ -62,6 +65,9 @@ class SimRegArg(SimFunctionArgument):
 
     def __eq__(self, other):
         return type(other) is SimRegArg and self.reg_name == other.reg_name
+
+    def __hash__(self):
+        return hash((self.size, self.reg_name, tuple(self.alt_offsets)))
 
     def _fix_offset(self, state, size):
         """
@@ -97,6 +103,9 @@ class SimStackArg(SimFunctionArgument):
 
     def __eq__(self, other):
         return type(other) is SimStackArg and self.stack_offset == other.stack_offset
+
+    def __hash__(self):
+        return hash((self.size, self.stack_offset))
 
     def set_value(self, state, value, endness=None, stack_base=None):    # pylint: disable=arguments-differ
         self.check_value(value)
@@ -470,7 +479,7 @@ class SimCC(object):
 
         grow_like_stack controls the behavior of allocating data at alloc_base. When data from args needs to be wrapped
         in a pointer, the pointer needs to point somewhere, so that data is dumped into memory at alloc_base. If you
-        set alloc_base to point to somewhere other than the stack, set grow_like_stack to False so that sequencial
+        set alloc_base to point to somewhere other than the stack, set grow_like_stack to False so that sequential
         allocations happen at increasing addresses.
         """
         allocator = AllocHelper(alloc_base if alloc_base is not None else state.regs.sp,
@@ -685,6 +694,14 @@ class SimCC(object):
     def __repr__(self):
         return "<" + self.__class__.__name__ + '>'
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return set(self.args) == set(other.args) and \
+               self.ret_val == other.ret_val and \
+               self.sp_delta == other.sp_delta
+
     @classmethod
     def _match(cls, arch, args, sp_delta):
         if cls.ARCH is not None and not isinstance(arch, cls.ARCH):
@@ -703,6 +720,31 @@ class SimCC(object):
                 return False
 
         return True
+
+    @staticmethod
+    def find_cc(arch, args, sp_delta):
+        """
+        Pinpoint the best-fit calling convention and return the corresponding SimCC instance, or None if no fit is
+        found.
+
+        :param Arch arch:       An ArchX instance. Can be obtained from archinfo.
+        :param list args:       A list of arguments.
+        :param int sp_delta:    The change of stack pointer before and after the call is made.
+        :return:                A calling convention instance, or None if none of the SimCC subclasses seems to fit the
+                                arguments provided.
+        :rtype:                 SimCC or None
+        """
+
+        if arch.name not in CC:
+            return None
+
+        possible_cc_classes = CC[arch.name]
+
+        for cc_cls in possible_cc_classes:
+            if cc_cls._match(arch, args, sp_delta):
+                return cc_cls(arch, args=args, sp_delta=sp_delta)
+
+        return None
 
 
 class SimLyingRegArg(SimRegArg):
@@ -994,7 +1036,37 @@ class SimCCUnknown(SimCC):
     def __repr__(self):
         return "<SimCCUnknown - %s %s sp_delta=%d>" % (self.arch.name, self.args, self.sp_delta)
 
-CC = [ SimCCCdecl, SimCCSystemVAMD64, SimCCARM, SimCCO32, SimCCO64, SimCCPowerPC, SimCCPowerPC64, SimCCAArch64 ]
+
+CC = {
+    'AMD64': [
+        SimCCSystemVAMD64,
+    ],
+    'X86': [
+        SimCCCdecl,
+    ],
+    'ARMEL': [
+        SimCCARM,
+    ],
+    'ARMHF': [
+        SimCCARM,
+    ],
+    'MIPS32': [
+        SimCCO32,
+    ],
+    'MIPS64': [
+        SimCCO64,
+    ],
+    'PPC32': [
+        SimCCPowerPC,
+    ],
+    'PPC64': [
+        SimCCPowerPC64,
+    ],
+    'AARCH64': [
+        SimCCAArch64,
+    ],
+}
+
 DefaultCC = {
     'AMD64': SimCCSystemVAMD64,
     'X86': SimCCCdecl,
