@@ -2,7 +2,7 @@ import claripy
 
 from .s_type import SimTypePointer as Ptr, SimTypeTop as Top
 
-class TypedValue(claripy.BackendObject):
+class TypedValue(object):
     def __init__(self, ty, value):
         self.ty = ty
         self.value = value
@@ -142,14 +142,6 @@ class TypeBackend(claripy.Backend):
     #    import ipdb; ipdb.set_trace()
     #    return super(TypeBackend, self).convert(*args, **kwargs)
 
-class TypeAnnotation(claripy.Annotation):
+class TypeAnnotation(object):
     def __init__(self, ty):
         self.ty = ty
-
-    @property
-    def eliminatable(self): #pylint:disable=no-self-use
-        return False
-
-    @property
-    def relocatable(self): #pylint:disable=no-self-use
-        return False

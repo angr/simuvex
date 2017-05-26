@@ -574,7 +574,7 @@ class Unicorn(SimStatePlugin):
     def _concretize(self, d):
         cd = self.state.se.eval_to_ast(d, 1)[0]
         if hash(d) not in self._concretized_asts:
-            constraint = (d == cd).annotate(AggressiveConcretizationAnnotation(self.state.regs.ip))
+            constraint = (d == cd).annotate_outer(AggressiveConcretizationAnnotation(self.state.regs.ip))
             self.state.add_constraints(constraint)
             self._concretized_asts.add(hash(d))
         return cd

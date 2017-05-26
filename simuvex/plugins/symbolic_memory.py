@@ -12,17 +12,12 @@ from ..storage.memory_object import SimMemoryObject
 
 DEFAULT_MAX_SEARCH = 8
 
-class MultiwriteAnnotation(claripy.Annotation):
-    @property
-    def eliminatable(self):
-        return False
-    @property
-    def relocateable(self):
-        return True
+class MultiwriteAnnotation(object):
+    pass
 
 def _multiwrite_filter(mem, ast): #pylint:disable=unused-argument
     # this is a huge hack, but so is the whole multiwrite crap
-    return any(isinstance(a, MultiwriteAnnotation) for a in ast._uneliminatable_annotations)
+    return any(isinstance(a, MultiwriteAnnotation) for a in ast.outer_annotations)
 
 class SimSymbolicMemory(SimMemory): #pylint:disable=abstract-method
     _CONCRETIZATION_STRATEGIES = [ 'symbolic', 'symbolic_approx', 'any', 'any_approx', 'max', 'max_approx',
@@ -767,7 +762,7 @@ class SimSymbolicMemory(SimMemory): #pylint:disable=abstract-method
 
         for a,sv in zip(req.actual_addresses, req.stored_values):
             # here, we ensure the uuids are generated for every expression written to memory
-            sv.make_uuid()
+            sv.globalize()
             size = len(sv)/8
             self.state.scratch.dirty_addrs.update(range(a, a+size))
             mo = SimMemoryObject(sv, a, length=size)

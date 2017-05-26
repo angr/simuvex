@@ -28,7 +28,7 @@ class strchr(simuvex.SimProcedure):
             a, c, i = self.state.memory.find(s_addr, c, max_search, default=0)
 
         if len(i) != 0:
-            a = a.annotate(MultiwriteAnnotation())
+            a = a.annotate_outer(MultiwriteAnnotation())
             self.state.add_constraints(*c)
 
         return a

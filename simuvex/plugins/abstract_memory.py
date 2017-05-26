@@ -361,7 +361,7 @@ class SimAbstractMemory(SimMemory): #pylint:disable=abstract-method
         if isinstance(addr_e, claripy.ast.Base):
             if not isinstance(addr_e._model_vsa, ValueSet):
                 # Convert it to a ValueSet first by annotating it
-                addr_e = addr_e.annotate(RegionAnnotation('global', 0, addr_e._model_vsa))
+                addr_e = addr_e.annotate_inline(RegionAnnotation('global', 0, addr_e._model_vsa))
 
             return addr_e._model_vsa.items()
 

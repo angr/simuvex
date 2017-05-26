@@ -457,6 +457,8 @@ class SimSolver(SimStatePlugin):
     @error_converter
     def add(self, *constraints):
         cc = self._adjust_constraint_list(constraints)
+        for c in constraints:
+            c.globalize()
         return self._solver.add(cc)
 
     #
