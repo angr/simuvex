@@ -23,7 +23,6 @@ class strncmp(simuvex.SimProcedure):
         b_len = b_strlen.ret_expr
 
         match_constraints = [ ]
-        variables = a_len.variables | b_len.variables | limit.variables
         ret_expr = self.state.se.Unconstrained("strncmp_ret", self.state.arch.bits)
 
         # determine the maximum number of bytes to compare
@@ -56,19 +55,19 @@ class strncmp(simuvex.SimProcedure):
             if self.state.se.single_valued(limit) and self.state.se.any_int(limit) == 0:
                 # limit is 0
                 l.debug("returning equal for 0-limit")
-                return self.state.se.BVV(0, self.state.arch.bits, variables=variables)
+                return self.state.se.BVV(0, self.state.arch.bits)
             elif self.state.se.single_valued(a_len) and self.state.se.single_valued(b_len) and \
                     self.state.se.any_int(a_len) == self.state.se.any_int(b_len) == 0:
                 # two empty strings
                 l.debug("returning equal for two empty strings")
-                return self.state.se.BVV(0, self.state.arch.bits, variables=variables)
+                return self.state.se.BVV(0, self.state.arch.bits)
             else:
                 # all other cases fall into this branch
                 l.debug("returning non-equal for comparison of an empty string and a non-empty string")
                 if a_strlen.max_null_index == 0:
-                    return self.state.se.BVV(-1, self.state.arch.bits, variables=variables)
+                    return self.state.se.BVV(-1, self.state.arch.bits)
                 else:
-                    return self.state.se.BVV(1, self.state.arch.bits, variables=variables)
+                    return self.state.se.BVV(1, self.state.arch.bits)
 
         # the bytes
         a_bytes = self.state.memory.load(a_addr, maxlen, endness='Iend_BE')
@@ -88,15 +87,13 @@ class strncmp(simuvex.SimProcedure):
             if concrete_run and self.state.se.single_valued(a_byte) and self.state.se.single_valued(b_byte):
                 a_conc = self.state.se.any_int(a_byte)
                 b_conc = self.state.se.any_int(b_byte)
-                variables |= a_byte.variables
-                variables |= b_byte.variables
 
                 if a_conc != b_conc:
                     l.debug("... found mis-matching concrete bytes 0x%x and 0x%x", a_conc, b_conc)
                     if a_conc < b_conc:
-                        return self.state.se.BVV(-1, self.state.arch.bits, variables=variables)
+                        return self.state.se.BVV(-1, self.state.arch.bits)
                     else:
-                        return self.state.se.BVV(1, self.state.arch.bits, variables=variables)
+                        return self.state.se.BVV(1, self.state.arch.bits)
             else:
 
                 if self.state.mode == 'static':
@@ -110,7 +107,7 @@ class strncmp(simuvex.SimProcedure):
 
         if concrete_run:
             l.debug("concrete run made it to the end!")
-            return self.state.se.BVV(0, self.state.arch.bits, variables=variables)
+            return self.state.se.BVV(0, self.state.arch.bits)
 
         if self.state.mode == 'static':
             ret_expr = self.state.se.ESI(8)
